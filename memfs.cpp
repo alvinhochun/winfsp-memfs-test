@@ -20,12 +20,14 @@
  */
 
 #undef _DEBUG
+#define NOMINMAX
 #include "memfs.h"
 #include <sddl.h>
 #include <VersionHelpers.h>
 #include <cassert>
 #include <map>
 #include <unordered_map>
+#include <algorithm>
 
 /* SLOWIO */
 #include <thread>
@@ -74,7 +76,7 @@ FSP_FSCTL_STATIC_ASSERT(MEMFS_MAX_PATH > MAX_PATH,
 //#define DEBUG_BUFFER_CHECK
 #endif
 
-#define MEMFS_SECTOR_SIZE               512
+#define MEMFS_SECTOR_SIZE               4096
 #define MEMFS_SECTORS_PER_ALLOCATION_UNIT 1
 
 /*
@@ -1348,8 +1350,10 @@ static NTSTATUS SetFileSizeInternal(FSP_FILE_SYSTEM *FileSystem,
         {
             if (FileNode->FileInfo.AllocationSize < NewSize)
             {
-                UINT64 AllocationUnit = MEMFS_SECTOR_SIZE * MEMFS_SECTORS_PER_ALLOCATION_UNIT;
-                UINT64 AllocationSize = (NewSize + AllocationUnit - 1) / AllocationUnit * AllocationUnit;
+                constexpr UINT64 AllocationUnit = MEMFS_SECTOR_SIZE * MEMFS_SECTORS_PER_ALLOCATION_UNIT;
+                const UINT64 AllocationSizeNew = (NewSize + AllocationUnit - 1) / AllocationUnit * AllocationUnit;
+				const UINT64 AllocationSizeDouble = FileNode->FileInfo.AllocationSize * 2;
+				const UINT64 AllocationSize = std::max(AllocationSizeNew, AllocationSizeDouble);
 
                 NTSTATUS Result = SetFileSizeInternal(FileSystem, FileNode, AllocationSize, TRUE);
                 if (!NT_SUCCESS(Result))
