@@ -62,7 +62,7 @@ NTSTATUS MemfsCreateFunnel(
     ULONG SlowioRarefyDelay,
     PWSTR FileSystemName,
     PWSTR VolumePrefix,
-    PWSTR RootSddl,
+    PCWSTR RootSddl,
     MEMFS **PMemfs);
 VOID MemfsDelete(MEMFS *Memfs);
 NTSTATUS MemfsStart(MEMFS *Memfs);

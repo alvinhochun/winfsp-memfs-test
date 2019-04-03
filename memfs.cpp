@@ -284,7 +284,7 @@ typedef struct _MEMFS
 } MEMFS;
 
 static inline
-NTSTATUS MemfsFileNodeCreate(PWSTR FileName, MEMFS_FILE_NODE **PFileNode)
+NTSTATUS MemfsFileNodeCreate(PCWSTR FileName, MEMFS_FILE_NODE **PFileNode)
 {
     static UINT64 IndexNumber = 1;
     MEMFS_FILE_NODE *FileNode;
@@ -1539,7 +1539,7 @@ typedef struct _MEMFS_READ_DIRECTORY_CONTEXT
     PULONG PBytesTransferred;
 } MEMFS_READ_DIRECTORY_CONTEXT;
 
-static BOOLEAN AddDirInfo(MEMFS_FILE_NODE *FileNode, PWSTR FileName,
+static BOOLEAN AddDirInfo(MEMFS_FILE_NODE *FileNode, PCWSTR FileName,
     PVOID Buffer, ULONG Length, PULONG PBytesTransferred)
 {
     UINT8 DirInfoBuf[sizeof(FSP_FSCTL_DIR_INFO) + sizeof FileNode->FileName];
@@ -1827,7 +1827,7 @@ static BOOLEAN AddStreamInfo(MEMFS_FILE_NODE *FileNode,
 {
     UINT8 StreamInfoBuf[sizeof(FSP_FSCTL_STREAM_INFO) + sizeof FileNode->FileName];
     FSP_FSCTL_STREAM_INFO *StreamInfo = (FSP_FSCTL_STREAM_INFO *)StreamInfoBuf;
-    PWSTR StreamName;
+    PCWSTR StreamName;
 
     StreamName = wcschr(FileNode->FileName, L':');
     if (0 != StreamName)
@@ -1974,14 +1974,14 @@ NTSTATUS MemfsCreateFunnel(
     ULONG SlowioRarefyDelay,
     PWSTR FileSystemName,
     PWSTR VolumePrefix,
-    PWSTR RootSddl,
+    PCWSTR RootSddl,
     MEMFS **PMemfs)
 {
     NTSTATUS Result;
     FSP_FSCTL_VOLUME_PARAMS VolumeParams;
     BOOLEAN CaseInsensitive = !!(Flags & MemfsCaseInsensitive);
     BOOLEAN FlushAndPurgeOnCleanup = !!(Flags & MemfsFlushAndPurgeOnCleanup);
-    PWSTR DevicePath = MemfsNet == (Flags & MemfsDeviceMask) ?
+    PCWSTR DevicePath = MemfsNet == (Flags & MemfsDeviceMask) ?
         L"" FSP_FSCTL_NET_DEVICE_NAME : L"" FSP_FSCTL_DISK_DEVICE_NAME;
     UINT64 AllocationUnit;
     MEMFS *Memfs;
@@ -2057,7 +2057,7 @@ NTSTATUS MemfsCreateFunnel(
     wcscpy_s(VolumeParams.FileSystemName, sizeof VolumeParams.FileSystemName / sizeof(WCHAR),
         0 != FileSystemName ? FileSystemName : L"-MEMFS");
 
-    Result = FspFileSystemCreate(DevicePath, &VolumeParams, &MemfsInterface, &Memfs->FileSystem);
+    Result = FspFileSystemCreate(const_cast<PWSTR>(DevicePath), &VolumeParams, &MemfsInterface, &Memfs->FileSystem);
     if (!NT_SUCCESS(Result))
     {
         MemfsFileNodeMapDelete(Memfs->FileNodeMap);
